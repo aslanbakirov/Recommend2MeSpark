@@ -63,19 +63,56 @@ object RecommendationModel {
    
     val model = new MatrixFactorizationModel(10, userX, productX);
     
+    
+    val productList = sc.textFile("hdfs://10.100.8.55:8020/foodData/productIdRealId.txt")
+    
+    val productIds = productList.map(_.split(",")(0)).cache()
+    
+    val userList = sc.textFile("hdfs://10.100.8.55:8020/foodData/sortedUserIds.txt").cache()
+    
+    //val userIds =  userList.map(_.split(",")(0)).cache
+    
+    val userRankArray = new Array[Array[Double]](5)
+    
+    var scoreArray = new Array[Double](5)
+    
+    val userArray = userList.take(5)
+    val productArray = productIds.take(5)
+    
+    for(i <- 0 to (userArray.length-1)){
+    	for(j <- 0 to (productArray.length-1)){
+    	  scoreArray(j) = model.predict(userArray(i).toInt,productArray(j).toInt)
+    	}
+    	userRankArray(i) = scoreArray
+    	scoreArray = new Array[Double](5)
+    }
+    
+    
+    val recommendationArray = new Array[Array[Double]](5)
+    
+    for(i<- 0 to (userArray.length-1)){
+       recommendationArray(i) = sc.parallelize(userRankArray(i)).top(3)
+    }
+    
+    val recommendationList: List[List[Double]] = List()
+    
+    for(i<- 0 to (userArray.length-1)){
+       recommendationList:+(recommendationArray(i).toList)
+    }
+
+    sc.parallelize(recommendationList).saveAsTextFile("hdfs://10.100.8.55:8020/foodData/recommendationList")
+    
+//    for(i<- 0 to (userArray.length-1)){
+//       sc.parallelize(recommendationArray(i)).saveAsTextFile("hdfs://10.100.8.55:8020/foodData/recommendationArray"+i)
+//    }
+    
     return model;
   }
   
    def predict(userId:Int, productId:Int, model:MatrixFactorizationModel):Double={
    return model.predict(userId,productId);
   }
-   
-  def getFruits():List[String]={
-    
-    val fruit: List[String] = List("apples", "oranges", "pears")
-    return fruit
-  } 
-   
+     
   def main(args: Array[String]) {
     
   }
