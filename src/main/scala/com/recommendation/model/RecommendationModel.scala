@@ -94,10 +94,10 @@ object RecommendationModel {
        recommendationArray(i) = sc.parallelize(userRankArray(i)).top(3)
     }
     
-    val recommendationList: List[List[Double]] = List()
+    var recommendationList: List[List[Double]] = List()
     
     for(i<- 0 to (userArray.length-1)){
-       recommendationList:+(recommendationArray(i).toList)
+       recommendationList::=(recommendationArray(i).toList)
     }
 
     sc.parallelize(recommendationList).saveAsTextFile("hdfs://10.100.8.55:8020/foodData/recommendationList")
